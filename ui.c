@@ -103,7 +103,7 @@ static volatile char key_pressed[KEY_MAX + 1];
 static void draw_background_locked(gr_surface icon)
 {
     gPagesIdentical = 0;
-    gr_color(0, 0, 0, 255);
+    gr_color(94, 94, 94, 255); //background color
     gr_fill(0, 0, gr_fb_width(), gr_fb_height());
 
     if (icon) {
@@ -129,7 +129,7 @@ static void draw_progress_locked()
     int dy = (3*gr_fb_height() + iconHeight - 2*height)/4;
 
     // Erase behind the progress bar (in case this was a progress-only update)
-    gr_color(0, 0, 0, 255);
+    gr_color(255, 255, 255, 255); //probably build.prop
     gr_fill(dx, dy, width, height);
 
     if (gProgressBarType == PROGRESSBAR_TYPE_NORMAL) {
@@ -171,20 +171,20 @@ static void draw_screen_locked(void)
     draw_progress_locked();
 
     if (show_text) {
-        gr_color(0, 0, 0, 160);
+        gr_color(24, 24, 24, 255); //background overlay
         gr_fill(0, 0, gr_fb_width(), gr_fb_height());
 
         int i = 0;
         if (show_menu) {
-            gr_color(122, 154, 29, 255);
+            gr_color(220, 114, 0, 255); //above text
             gr_fill(0, (menu_top+menu_sel) * CHAR_HEIGHT,
                     gr_fb_width(), (menu_top+menu_sel+1)*CHAR_HEIGHT+1);
 
             for (; i < menu_top + menu_items; ++i) {
                 if (i == menu_top + menu_sel) {
-                    gr_color(255, 255, 255, 255);
+                    gr_color(255, 255, 255, 255); // selected text
                     draw_text_line(i, menu[i]);
-                    gr_color(122, 154, 29, 255);
+                    gr_color(220, 114, 0, 255); //unselected text
                 } else {
                     draw_text_line(i, menu[i]);
                 }
@@ -194,7 +194,7 @@ static void draw_screen_locked(void)
             ++i;
         }
 
-        gr_color(193, 193, 193, 255);
+        gr_color(255, 255, 255, 255); //status'
 
         for (; i < text_rows; ++i) {
             draw_text_line(i, text[(i+text_top) % text_rows]);

@@ -29,7 +29,7 @@
 #include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
-#include <termios.h> 
+#include <termios.h>
 
 #include "bootloader.h"
 #include "commands.h"
@@ -52,7 +52,8 @@ static const char *COMMAND_FILE = "CACHE:recovery/command";
 static const char *INTENT_FILE = "CACHE:recovery/intent";
 static const char *LOG_FILE = "CACHE:recovery/log";
 static const char *SDCARD_PACKAGE_FILE = "SDCARD:update.zip";
-static const char *SDCARD_PATH = "SDCARD:";
+/* static const char *SDCARD_PACAKGE_PATH = "SDCARD:/cm-updates/"; */
+static const char *SDCARD_PATH = "SDCARD:/cm-updates/";
 #define SDCARD_PATH_LENGTH 7
 static const char *TEMPORARY_LOG_FILE = "/tmp/recovery.log";
 
@@ -290,7 +291,7 @@ erase_root(const char *root)
 {
     ui_set_background(BACKGROUND_ICON_INSTALLING);
     ui_show_indeterminate_progress();
-    ui_print("Formatting %s...\n", root);
+    ui_print("-- formatting %s --\n", root);
     return format_root_device(root);
 }
 
@@ -430,30 +431,50 @@ out:
 static void
 prompt_and_wait()
 {
-    static char* headers[] = { "Android system recovery <"
-                          EXPAND(RECOVERY_API_VERSION) ">",
-                        "",
-                        "Use trackball to highlight;",
-                        "click to select.",
-                        "",
-                        NULL };
+    static char* headers[] = { "++    Welcome to NewReco    ++",
+					"",
+                       		 NULL };
 
 // these constants correspond to elements of the items[] list.
 #define ITEM_REBOOT        0
 #define ITEM_APPLY_UPDATE  1
-#define ITEM_WIPE_DATA     2
+#define ITEM_BLANK_A	   2	//space
 #define ITEM_NANDROID      3
 #define ITEM_RESTORE       4
-#define ITEM_FSCK          5
-#define ITEM_CONSOLE       6
+#define ITEM_BLANK_E	   5 //space
+#define ITEM_HTCSYSTEM	   6
+#define ITEM_BLANK_B	   7	//space
+#define ITEM_WIPE_DATA     8
+#define ITEM_WIPE_EXT	   9
+#define ITEM_WIPE_DALV	   10
+#define ITEM_FIXROTATE	   11
+#define ITEM_BLANK_C	   12	//space
+#define ITEM_PARTED	   13
+#define ITEM_BLANK_D	   14 //space
+#define ITEM_FSCK          15
+#define ITEM_CONSOLE       16
+#define ITEM_BLANK_F	   17 //space
+#define ITEM_USBTOGGLE	   18
 
     static char* items[] = { "[Home+Back] reboot system now",
-                             "[Alt+A] apply update from sdcard",
-                             "[Alt+W] wipe data/factory reset",
-                             "[Alt+B] nandroid v2.1 backup",
-                             "[Alt+R] restore latest backup",
-                             "[Alt+F] repair ext filesystems",
-                             "[Alt+X] go to console",
+                             "[Alt+A] apply update",
+				     "",
+                             "[Alt+B] bart 1.0.1 backup",
+                             "[Alt+R] bart 1.0.1 restore",
+				     "",
+				     "[Alt+S] flash system1.6.img",
+				     "",
+                             "[Alt+W] wipe data",
+				     "[Alt+E] wipe extfs",
+				     "[Alt+D] wipe dalvik-cache",
+				     "[Alt+R] fix rotate",
+				     "",
+				     "[Alt+P] sdparted 0.53",
+				     "",
+                             "[Alt+F] repair_fs",
+                             "[Alt+X] console",
+				     "",
+				     "[Alt+U] ums_toggle",
                              NULL };
 
     ui_start_menu(headers, items);
@@ -477,16 +498,28 @@ prompt_and_wait()
             chosen_item = ITEM_REBOOT;
         } else if (alt && key == KEY_W) {
             chosen_item = ITEM_WIPE_DATA;
+        } else if (alt && key == KEY_E) {
+            chosen_item = ITEM_WIPE_EXT;
+	  } else if (alt && key == KEY_D) {
+            chosen_item = ITEM_WIPE_DALV;
+	  } else if (alt && key == KEY_S) {
+		chosen_item = ITEM_HTCSYSTEM;
         } else if (alt && key == KEY_A) {
             chosen_item = ITEM_APPLY_UPDATE;
         } else if (alt && key == KEY_B) {
             chosen_item = ITEM_NANDROID;
+	  } else if (alt && key == KEY_U) {
+		chosen_item = ITEM_USBTOGGLE;
+	  } else if (alt && key == KEY_R) {
+		chosen_item = ITEM_FIXROTATE;
         } else if (alt && key == KEY_F) {
             chosen_item = ITEM_FSCK;
+        } else if (alt && key == KEY_P) {
+            chosen_item = ITEM_PARTED;
         } else if (alt && key == KEY_R) {
             chosen_item = ITEM_RESTORE;
         } else if (alt && key == KEY_X) {
-            chosen_item = ITEM_CONSOLE;    
+            chosen_item = ITEM_CONSOLE;
         } else if ((key == KEY_DOWN || key == KEY_VOLUMEDOWN) && visible) {
             ++selected;
             selected = ui_menu_select(selected);
@@ -509,15 +542,16 @@ prompt_and_wait()
                 case ITEM_WIPE_DATA:
                     ui_print("\n-- This will ERASE your data!");
                     ui_print("\n-- Press HOME to confirm, or");
-                    ui_print("\n-- any other key to abort..");
+                    ui_print("\n-- any other key to abort");
                     int confirm_wipe = ui_wait_key();
                     if (confirm_wipe == KEY_DREAM_HOME) {
-                        ui_print("\n-- Wiping data...\n");
+				ui_print("\n");
+                        ui_print("\n++ wiping data ++\n");
                         erase_root("DATA:");
                         erase_root("CACHE:");
-                        ui_print("Data wipe complete.\n");
+                        ui_print("++ data erased ++\n");
                     } else {
-                        ui_print("\nData wipe aborted.\n");
+                        ui_print("\n-- data untouched --\n");
                     }
                     if (!ui_text_visible()) return;
                     break;
@@ -526,31 +560,65 @@ prompt_and_wait()
                     choose_update_file();
                     break;
 
+		    case ITEM_WIPE_DALV:
+				ui_print("\n-- Clear dalvik-cache");
+	           		ui_print("\n-- Press HOME to confirm,");
+                		ui_print("\n-- any other key to abort.\n");
+			int confirm_wipedc = ui_wait_key();
+	                if (confirm_wipedc == KEY_DREAM_HOME) {
+	                    ui_print("\n++ wiping dalvik-cache ++");
+	                    pid_t pidwipedc = fork();
+	                    if (pidwipedc == 0) {
+	                        char *args[] = { "/sbin/sh", "-c", "/sbin/deldalv", "1>&2", NULL };
+	                        execv("/sbin/sh", args);
+	                        fprintf(stderr, "\nE: Unable to execute deldalv!\n(%s)\n", strerror(errno));
+	                        _exit(-1);
+	                    }
+ 
+	                    int wipedc_status;
+	 
+	                    while (waitpid(pidwipedc, &wipedc_status, WNOHANG) == 0) {
+	                        ui_print("-");
+	                        sleep(1);
+	                    }
+	                    ui_print("\n");
+ 
+	                    if (!WIFEXITED(wipedc_status) || (WEXITSTATUS(wipedc_status) != 0)) {
+	                        ui_print("\nE: run deldalv via console!\n\n");
+	                    } else {
+	                        ui_print("\n++ dalvik cleared ++\n\n");
+	                    }
+			} else {
+	       	                ui_print("\n-- dalvik untouched --\n\n");
+       	            	}
+			if (!ui_text_visible()) return;
+			break;
+
                 case ITEM_NANDROID:
                     if (ensure_root_path_mounted("SDCARD:") != 0) {
-                        ui_print("Can't mount sdcard\n");
+                        ui_print("E: Can't mount sdcard\n");
                     } else {
-                        ui_print("\nPerforming backup");
+                        ui_print("\n++ starting backup ++\n");
                         pid_t pid = fork();
                         if (pid == 0) {
-                            char *args[] = {"/sbin/sh", "-c", "/sbin/nandroid-mobile.sh backup", "1>&2", NULL};
+                            char *args[] = {"/sbin/sh", "-c", "/sbin/bart -b -s", NULL};
                             execv("/sbin/sh", args);
-                            fprintf(stderr, "E:Can't run nandroid-mobile.sh\n(%s)\n", strerror(errno));
+                            fprintf(stderr, "E: Can't run bart.sh\n(%s)\n", strerror(errno));
                             _exit(-1);
                         }
 
                         int status;
 
                         while (waitpid(pid, &status, WNOHANG) == 0) {
-                            ui_print(".");
+                            ui_print("-");
                             sleep(1);
                         }
                         ui_print("\n");
 
                         if (!WIFEXITED(status) || (WEXITSTATUS(status) != 0)) {
-                             ui_print("Error running nandroid backup. Backup not performed.\n\n");
+                             ui_print("Error running bart.sh backup.\n Backup not performed.\n\n");
                         } else {
-                             ui_print("Backup complete!\n\n");
+                             ui_print("++ backup complete ++\n\n");
                         }
                     }
                     break;
@@ -563,68 +631,276 @@ prompt_and_wait()
                     if (confirm_restore == KEY_DREAM_HOME) {
                         ui_print("\n");
                         if (ensure_root_path_mounted("SDCARD:") != 0) {
-                            ui_print("Can't mount sdcard, aborting.\n");
+                            ui_print("E: Can't mount sdcard, aborting.\n");
                         } else {
-                            ui_print("Restoring latest backup");
+                            ui_print("++ restoring backup ++\n");
                             pid_t pid = fork();
-                            if (pid == 0) {
-                                char *args[] = {"/sbin/sh", "-c", "/sbin/nandroid-mobile.sh restore", "1>&2", NULL};
-                                execv("/sbin/sh", args);
-                                fprintf(stderr, "Can't run nandroid-mobile.sh\n(%s)\n", strerror(errno));
-                                _exit(-1);
-                            }
-
+		                      if (pid == 0) {
+		                          char *args[] = {"/sbin/sh", "-c", "/sbin/demount; /sbin/bart -r", "1>&2", NULL};
+		                          execv("/sbin/sh", args);
+		                          fprintf(stderr, "E: Can't run bart.sh\n(%s)\n", strerror(errno));
+		                          _exit(-1);
+		                      }
                             int status3;
 
                             while (waitpid(pid, &status3, WNOHANG) == 0) {
-                                ui_print(".");
+                                ui_print("-");
                                 sleep(1);
-                            } 
+                            }
                             ui_print("\n");
 
                             if (!WIFEXITED(status3) || (WEXITSTATUS(status3) != 0)) {
-                                ui_print("Error performing restore!  Try running 'nandroid-mobile.sh restore' from console.\n\n");
+                                ui_print("Error performing restore!");
+					  ui_print ("\nTry running 'bart -r' from console.\n\n");
                             } else {
-                                ui_print("Restore complete!\n\n");
-                            }
+                                ui_print("++ restore complete ++\n\n");
+                            	}
                         }
                     } else {
-                        ui_print("Restore complete!\n\n");
+                        ui_print("++ restore complete ++\n\n");
                     }
                     if (!ui_text_visible()) return;
                     break;
 
+		case ITEM_FIXROTATE:
+				ui_print("\n-- Fix rotate issues");
+	               	ui_print("\n-- Press HOME to confirm,");
+                		ui_print("\n-- any other key to abort.\n");
+			int confirm_fixrotate = ui_wait_key();
+	                if (confirm_fixrotate == KEY_DREAM_HOME) {
+                    		ui_print("\n++ fixing rotation ++");
+		                    pid_t pidfr = fork();
+                		    if (pidfr == 0) {
+                		        char *args[] = { "/sbin/sh", "-c", "/sbin/fix_rotate", "1>&2", NULL };
+                		        execv("/sbin/sh", args);
+                		        fprintf(stderr, "\nE: Unable to execute fix_rotate!\n(%s)\n", strerror(errno));
+                		        _exit(-1);
+                		    }
+ 
+                		    int fixrotate_status;
+                		    while (waitpid(pidfr, &fixrotate_status, WNOHANG) == 0) {
+                		        ui_print("-");
+                		        sleep(1);
+                		    }
+                		    ui_print("\n");
+ 
+                		    if (!WIFEXITED(fixrotate_status) || (WEXITSTATUS(fixrotate_status) != 0)) {
+                		        ui_print("\nE: run fix_rotate via console!\n\n");
+                		    } else {
+                		        ui_print("\n++ rotation fixed! ++\n\n");
+                		    }
+			} else {
+	       	                ui_print("\n-- rotation left alone --\n\n");
+       	            	}
+			if (!ui_text_visible()) return;
+			break;
+
                 case ITEM_FSCK:
-                    ui_print("Checking filesystems");
+                    ui_print("++ checking filesystems ++\n");
                     pid_t pidf = fork();
                     if (pidf == 0) {
-                        char *args[] = { "/sbin/sh", "-c", "/sbin/repair_fs", "1>&2", NULL };
+                        char *args[] = { "/sbin/sh", "-c", "/sbin/demount; /sbin/repair_fs", "1>&2", NULL };
                         execv("/sbin/sh", args);
-                        fprintf(stderr, "Unable to execute e2fsck!\n(%s)\n", strerror(errno));
+                        fprintf(stderr, "E: Unable to execute e2fsck!\n(%s)\n", strerror(errno));
                         _exit(-1);
                     }
 
                     int fsck_status;
 
                     while (waitpid(pidf, &fsck_status, WNOHANG) == 0) {
-                        ui_print(".");
+                        ui_print("-");
                         sleep(1);
                     }
                     ui_print("\n");
 
                     if (!WIFEXITED(fsck_status) || (WEXITSTATUS(fsck_status) != 0)) {
-                        ui_print("Error checking filesystem!  Run e2fsck manually from console.\n\n");
+                        ui_print("Error checking filesystem!\nRun e2fsck manually from console.\n\n");
                     } else {
-                        ui_print("Filesystem checked and repaired.\n\n");
+                        ui_print("++ filesystems repaired ++\n\n");
                     }
                     break;
+
+		case ITEM_HTCSYSTEM:
+				ui_print("\n-- Flash System.img");
+	               	ui_print("\n-- Press HOME to confirm,");
+                		ui_print("\n-- any other key to abort.\n");
+			int confirm_flashhtc = ui_wait_key();
+	                if (confirm_flashhtc == KEY_DREAM_HOME) {
+                    		ui_print("\n++ flashing system.img ++");
+		                    pid_t pidfl = fork();
+                		    if (pidfl == 0) {
+                		        char *args[] = { "/sbin/sh", "-c", "/sbin/flashsystem.sh 1.6", "1>&2", NULL };
+                		        execv("/sbin/sh", args);
+                		        fprintf(stderr, "\nE: Unable to execute flashsystem.sh!\n(%s)\n", strerror(errno));
+                		        _exit(-1);
+                		    }
+ 				    ui_print("\n");
+                		    int flashhtc_status;
+                		    while (waitpid(pidfl, &flashhtc_status, WNOHANG) == 0) {
+                		        ui_print("-");
+                		        sleep(1);
+                		    }
+                		    ui_print("\n");
+ 
+                		    if (!WIFEXITED(flashhtc_status) || (WEXITSTATUS(flashhtc_status) != 0)) {
+                		        ui_print("\nE: /sdcard/htc/htc1.6.img exists?\n\n");
+                		    } else {
+                		        ui_print("\n++ system flashed ++\n\n");
+                		    }
+			} else {
+	       	                ui_print("\n-- /system left alone --\n\n");
+       	            	}
+			if (!ui_text_visible()) return;
+			break;
 
                 case ITEM_CONSOLE:
                     ui_print("\n");
 		    do_reboot = 0;
                     gr_exit();
                     break;
-            
+
+                case ITEM_BLANK_A:
+                    break;
+                case ITEM_BLANK_B:
+                    break;
+                case ITEM_BLANK_C:
+                    break;
+                case ITEM_BLANK_D:
+                    break;
+                case ITEM_BLANK_E:
+                    break;
+                case ITEM_BLANK_F:
+                    break;
+
+                case ITEM_USBTOGGLE:
+                    ui_print("\nEnabling USB mass storage : ");
+		    pid_t pidusbon = fork();
+                    if (pidusbon == 0) {
+                        char *args[] = { "/sbin/sh", "-c", "/sbin/ums_toggle", "1>&2", NULL };
+                        execv("/sbin/sh", args);
+                        fprintf(stderr, "\nUnable to execute ums_toggle!\n(%s)\n", strerror(errno));
+                        _exit(-1);
+                    }
+ 
+                    int usbon_status;
+ 
+                    while (waitpid(pidusbon, &usbon_status, WNOHANG) == 0) {
+                        ui_print("-");
+                        sleep(1);
+                    }
+                    ui_print("\n");
+ 
+                    if (!WIFEXITED(usbon_status) || (WEXITSTATUS(usbon_status) != 0)) {
+                        ui_print("\n- Error enabling USB mass storage!\n- Run ums_enable manually from console.\n\n");
+                    } else {
+                        ui_print("\nUSB mass toggled\n\n");
+                    }
+                    break;
+/*                case ITEM_DEMOUNT:*/
+/*				ui_print("\n");*/
+/*                        pid_t pidd = fork();*/
+/*                        if (pidd == 0) {*/
+/*                            char *args[] = {"/sbin/sh", "-c", "/sbin/ums_toggle 0", "1>&2", NULL};*/
+/*                            execv("/sbin/sh", args);*/
+/*                            fprintf(stderr, "E: Can't toggle ums!\n(%s)\n", strerror(errno));*/
+/*                            _exit(-1);*/
+/*                        }*/
+
+/*                        int status_pid;*/
+
+/*                        while (waitpid(pidd, &status_pid, WNOHANG) == 0) {*/
+/*                            sleep(1);*/
+/*                        }*/
+/*                        ui_print("\n");*/
+/*				ui_print("++ umounted all FS ++\n\n");*/
+/*                    break;*/
+
+/*		    case ITEM_INITSH:*/
+/*                        ui_print("\n");*/
+/*                        pid_t pidi = fork();*/
+/*                        if (pidi == 0) {*/
+/*                            char *args[] = {"/sbin/sh", "-c", "/sbin/mnt-toggle 1; /sbin/init.sh; /sbin/mnt-toggle 0", "1>&2", NULL};*/
+/*                            execv("/sbin/sh", args);*/
+/*                            fprintf(stderr, "E:Can't run init.sh\n(%s)\n", strerror(errno));*/
+/*                            _exit(-1);*/
+/*                        }*/
+
+/*                        int status_pii;*/
+
+/*                        while (waitpid(pidi, &status_pii, WNOHANG) == 0) {*/
+/*                            sleep(1);*/
+/*                        }*/
+/*                        ui_print("\n");*/
+/*				ui_print("++ init.sh complete ++\n\n");*/
+/*                    break;*/
+                case ITEM_WIPE_EXT:
+				ui_print("\n");
+                        pid_t pide = fork();
+                    	ui_print("\n-- This will erase extfs!");
+                    	ui_print("\n-- Press HOME to confirm, or");
+                    	ui_print("\n-- any other key to abort");
+                    	int confirm_wipeext = ui_wait_key();
+		              	if (confirm_wipeext == KEY_DREAM_HOME) {
+				                ui_print("\n++ erasing extfs ++\n");
+				                pid_t pidext = fork();
+						          if (pidext == 0) {
+						              char *args[] = {"/sbin/sh", "-c", "/sbin/wipe_ext", "1>&2", NULL};
+						              execv("/sbin/sh", args);
+						              fprintf(stderr, "E: unable to wipe extfs\n(%s)\n", strerror(errno));
+						              _exit(-1);
+						          }
+				                int status_pie;
+
+				                while (waitpid(pidext, &status_pie, WNOHANG) == 0) {
+							  ui_print("-");
+				                    sleep(1);
+				                }
+							  ui_print("\n");
+
+							  if (!WIFEXITED(status_pie) || (WEXITSTATUS(status_pie) != 0)) {
+							      ui_print("\nE: run wipe_ext via console!\n\n");
+							  } else {
+							      ui_print("\n\n++ extfs erased ++\n\n");
+							  }
+						} else {
+					 	                ui_print("\n\n-- extfs unchanged --\n\n");
+				 	            	}
+						if (!ui_text_visible()) return;
+                    break;
+		    case ITEM_PARTED:
+		    		ui_print("\n-- sdparted 0.53: fat32+ext2+swap");
+	               	ui_print("\n-- Press HOME to confirm,");
+                    	ui_print("\n-- any other key to abort.\n");
+                    	int confirm_split = ui_wait_key();
+                    	if (confirm_split == KEY_DREAM_HOME) {
+                    	    ui_print("\n");
+                    		ui_print("\n++ running sdparted ++");
+                    		pid_t pids = fork();
+                    		if (pids == 0) {
+                    		    char *args[] = { "/sbin/sh", "-c", "/sbin/sdparted -s", "1>&2", NULL };
+                    		    execv("/sbin/sh", args);
+                    		    fprintf(stderr, "\nE: Unable to execute sdparted!\n(%s)\n", strerror(errno));
+                    		    _exit(-1);
+                    		}
+ 
+                    		int split_status;
+ 
+	                    	while (waitpid(pids, &split_status, WNOHANG) == 0) {
+        	            	    ui_print("-");
+        	            	    sleep(1);
+        	            	}
+	                    	ui_print("\n");
+ 	
+        	            	if (!WIFEXITED(split_status) || (WEXITSTATUS(split_status) != 0)) {
+        	            	    ui_print("\nE: run sdparted via console!\n\n");
+        	            	} else {
+        	            	    ui_print("\n++ sdparted complete! ++\n\n");
+        	            	}
+			} else {
+	       	                ui_print("\n-- sdcard left intact ++\n\n");
+       	            	}
+			if (!ui_text_visible()) return;
+			break;
             }
 
             // if we didn't return from this function to reboot, show
@@ -660,14 +936,17 @@ main(int argc, char **argv)
     fprintf(stderr, "Starting recovery on %s", ctime(&start));
 
     tcflow(STDIN_FILENO, TCOOFF);
-    
+
     char prop_value[PROPERTY_VALUE_MAX];
     property_get("ro.modversion", &prop_value, "not set");
+    char prop_second[PROPERTY_VALUE_MAX];
+    property_get("ro.nick", &prop_second, "not set");
 
     ui_init();
-    ui_print("Build: ");
     ui_print(prop_value);
     ui_print("\n");
+    ui_print("+ Join us on IRC!\n\n");
+    ui_print(prop_second);
     get_args(&argc, &argv);
 
     int previous_runs = 0;
@@ -734,9 +1013,9 @@ main(int argc, char **argv)
     	ui_print("Rebooting...\n");
     	reboot(RB_AUTOBOOT);
 	}
-	
-	tcflush(STDIN_FILENO, TCIOFLUSH);	
+
+	tcflush(STDIN_FILENO, TCIOFLUSH);
 	tcflow(STDIN_FILENO, TCOON);
-	
+
     return EXIT_SUCCESS;
 }
