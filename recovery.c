@@ -53,7 +53,7 @@ static const char *INTENT_FILE = "CACHE:recovery/intent";
 static const char *LOG_FILE = "CACHE:recovery/log";
 static const char *SDCARD_PACKAGE_FILE = "SDCARD:update.zip";
 /* static const char *SDCARD_PACAKGE_PATH = "SDCARD:/cm-updates/"; */
-static const char *SDCARD_PATH = "SDCARD:/cm-updates/";
+static const char *SDCARD_PATH = "SDCARD:";
 #define SDCARD_PATH_LENGTH 7
 static const char *TEMPORARY_LOG_FILE = "/tmp/recovery.log";
 
@@ -436,46 +436,49 @@ prompt_and_wait()
                        		 NULL };
 
 // these constants correspond to elements of the items[] list.
-#define ITEM_REBOOT        0
-#define ITEM_APPLY_UPDATE  1
-#define ITEM_BLANK_A	   2	//space
-#define ITEM_NANDROID      3
-#define ITEM_RESTORE       4
-#define ITEM_BLANK_E	   5 //space
-#define ITEM_HTCSYSTEM	   6
-#define ITEM_BLANK_B	   7	//space
-#define ITEM_WIPE_DATA     8
-#define ITEM_WIPE_EXT	   9
-#define ITEM_WIPE_DALV	   10
-#define ITEM_FIXROTATE	   11
-#define ITEM_BLANK_C	   12	//space
-#define ITEM_PARTED	   13
-#define ITEM_BLANK_D	   14 //space
-#define ITEM_FSCK          15
-#define ITEM_CONSOLE       16
-#define ITEM_BLANK_F	   17 //space
-#define ITEM_USBTOGGLE	   18
+#define ITEM_REBOOT        	0
+#define ITEM_APPLY_UPDATE  	1
+#define ITEM_NANDROID      	2
+#define ITEM_RESTORE       	3
+#define ITEM_BLANK_A	   	4 	//space
+#define ITEM_HTCSYSTEM		5
+#define ITEM_BACKUP_GAPPS	6
+#define ITEM_RESTORE_GAPPS	7
+#define ITEM_BLANK_B		8	//space
+/*	#define ITEM_HTCBOOT	*/
+/*	#define ITEM_BLANK_C	*/
+#define ITEM_WIPE_DATA		9
+#define ITEM_WIPE_EXT		10
+#define ITEM_WIPE_DALV		11
+/*	#define ITEM_FIXROTATE	*/
+#define ITEM_BLANK_D		12	//space
+#define ITEM_PARTED		13
+#define ITEM_BLANK_E		14 	//space
+#define ITEM_FSCK		15
+#define ITEM_CONSOLE     	16
+#define ITEM_BLANK_F	   	17 	//space
+#define ITEM_USBTOGGLE	   	18
 
-    static char* items[] = { "[Home+Back] reboot system now",
-                             "[Alt+A] apply update",
-				     "",
-                             "[Alt+B] bart 1.0.1 backup",
-                             "[Alt+R] bart 1.0.1 restore",
-				     "",
-				     "[Alt+S] flash system1.6.img",
-				     "",
-                             "[Alt+W] wipe data",
-				     "[Alt+E] wipe extfs",
-				     "[Alt+D] wipe dalvik-cache",
-				     "[Alt+R] fix rotate",
-				     "",
-				     "[Alt+P] sdparted 0.53",
-				     "",
-                             "[Alt+F] repair_fs",
-                             "[Alt+X] console",
-				     "",
-				     "[Alt+U] ums_toggle",
-                             NULL };
+    static char* items[] = { 	"[Home+Back] reboot system now",
+                             	"[Alt+A] apply update",
+				"[Alt+B] bart 1.0.1 backup",
+				"[Alt+R] bart 1.0.1 restore",
+				"",
+				"[Alt+S] flash system.img",
+				"[Alt+G] backup gapps",
+				"[Alt+J] restore gapps",
+				"",
+                         	"[Alt+W] wipe data",
+				"[Alt+E] wipe extfs",
+				"[Alt+D] wipe dalvik-cache",
+				"",
+				"[Alt+P] sdparted 0.53",
+				"",
+                         	"[Alt+F] repair_fs",
+				"[Alt+X] console",
+				"",
+				"[Alt+U] ums_toggle",
+                         	NULL };
 
     ui_start_menu(headers, items);
     int selected = 0;
@@ -495,40 +498,44 @@ prompt_and_wait()
                    ui_key_pressed(KEY_DREAM_HOME)) {
                 usleep(1000);
             }
-            chosen_item = ITEM_REBOOT;
-        } else if (alt && key == KEY_W) {
-            chosen_item = ITEM_WIPE_DATA;
-        } else if (alt && key == KEY_E) {
-            chosen_item = ITEM_WIPE_EXT;
-	  } else if (alt && key == KEY_D) {
-            chosen_item = ITEM_WIPE_DALV;
-	  } else if (alt && key == KEY_S) {
-		chosen_item = ITEM_HTCSYSTEM;
-        } else if (alt && key == KEY_A) {
-            chosen_item = ITEM_APPLY_UPDATE;
-        } else if (alt && key == KEY_B) {
-            chosen_item = ITEM_NANDROID;
-	  } else if (alt && key == KEY_U) {
-		chosen_item = ITEM_USBTOGGLE;
-	  } else if (alt && key == KEY_R) {
-		chosen_item = ITEM_FIXROTATE;
-        } else if (alt && key == KEY_F) {
-            chosen_item = ITEM_FSCK;
-        } else if (alt && key == KEY_P) {
-            chosen_item = ITEM_PARTED;
-        } else if (alt && key == KEY_R) {
-            chosen_item = ITEM_RESTORE;
-        } else if (alt && key == KEY_X) {
-            chosen_item = ITEM_CONSOLE;
-        } else if ((key == KEY_DOWN || key == KEY_VOLUMEDOWN) && visible) {
-            ++selected;
-            selected = ui_menu_select(selected);
-        } else if ((key == KEY_UP || key == KEY_VOLUMEUP) && visible) {
-            --selected;
-            selected = ui_menu_select(selected);
-        } else if ((key == BTN_MOUSE || key == KEY_I7500_CENTER) && visible) {
-            chosen_item = selected;
-        }
+	chosen_item = ITEM_REBOOT;
+		} else if (alt && key == KEY_W) {
+	chosen_item = ITEM_WIPE_DATA;
+		} else if (alt && key == KEY_E) {
+	chosen_item = ITEM_WIPE_EXT;
+		} else if (alt && key == KEY_D) {
+	chosen_item = ITEM_WIPE_DALV;
+		} else if (alt && key == KEY_G) {
+	chosen_item = ITEM_RESTORE_GAPPS;
+		} else if (alt && key == KEY_J) {
+	chosen_item = ITEM_BACKUP_GAPPS;
+		} else if (alt && key == KEY_S) {
+	chosen_item = ITEM_HTCSYSTEM;
+		} else if (alt && key == KEY_A) {
+	chosen_item = ITEM_APPLY_UPDATE;
+		} else if (alt && key == KEY_B) {
+	chosen_item = ITEM_NANDROID;
+		} else if (alt && key == KEY_U) {
+	chosen_item = ITEM_USBTOGGLE;
+		} else if (alt && key == KEY_R) {
+	/*	chosen_item = ITEM_FIXROTATE;*/
+	/*		} else if (alt && key == KEY_F) {*/
+	chosen_item = ITEM_FSCK;
+		} else if (alt && key == KEY_P) {
+	chosen_item = ITEM_PARTED;
+		} else if (alt && key == KEY_R) {
+	chosen_item = ITEM_RESTORE;
+		} else if (alt && key == KEY_X) {
+	chosen_item = ITEM_CONSOLE;
+		} else if ((key == KEY_DOWN || key == KEY_VOLUMEDOWN) && visible) {
+	++selected;
+	selected = ui_menu_select(selected);
+		} else if ((key == KEY_UP || key == KEY_VOLUMEUP) && visible) {
+	--selected;
+	selected = ui_menu_select(selected);
+		} else if ((key == BTN_MOUSE || key == KEY_I7500_CENTER) && visible) {
+	chosen_item = selected;
+}
 
         if (chosen_item >= 0) {
             // turn off the menu, letting ui_print() to scroll output
@@ -662,38 +669,38 @@ prompt_and_wait()
                     if (!ui_text_visible()) return;
                     break;
 
-		case ITEM_FIXROTATE:
-				ui_print("\n-- Fix rotate issues");
-	               	ui_print("\n-- Press HOME to confirm,");
-                		ui_print("\n-- any other key to abort.\n");
-			int confirm_fixrotate = ui_wait_key();
-	                if (confirm_fixrotate == KEY_DREAM_HOME) {
-                    		ui_print("\n++ fixing rotation ++");
-		                    pid_t pidfr = fork();
-                		    if (pidfr == 0) {
-                		        char *args[] = { "/sbin/sh", "-c", "/sbin/fix_rotate", "1>&2", NULL };
-                		        execv("/sbin/sh", args);
-                		        fprintf(stderr, "\nE: Unable to execute fix_rotate!\n(%s)\n", strerror(errno));
-                		        _exit(-1);
-                		    }
- 
-                		    int fixrotate_status;
-                		    while (waitpid(pidfr, &fixrotate_status, WNOHANG) == 0) {
-                		        ui_print("-");
-                		        sleep(1);
-                		    }
-                		    ui_print("\n");
- 
-                		    if (!WIFEXITED(fixrotate_status) || (WEXITSTATUS(fixrotate_status) != 0)) {
-                		        ui_print("\nE: run fix_rotate via console!\n\n");
-                		    } else {
-                		        ui_print("\n++ rotation fixed! ++\n\n");
-                		    }
-			} else {
-	       	                ui_print("\n-- rotation left alone --\n\n");
-       	            	}
-			if (!ui_text_visible()) return;
-			break;
+/*		case ITEM_FIXROTATE:*/
+/*			ui_print("\n-- Fix rotate issues");*/
+/*	               	ui_print("\n-- Press HOME to confirm,");*/
+/*                	ui_print("\n-- any other key to abort.\n");*/
+/*			int confirm_fixrotate = ui_wait_key();*/
+/*	                if (confirm_fixrotate == KEY_DREAM_HOME) {*/
+/*                    		ui_print("\n++ fixing rotation ++");*/
+/*		                    pid_t pidfr = fork();*/
+/*                		    if (pidfr == 0) {*/
+/*                		        char *args[] = { "/sbin/sh", "-c", "/sbin/fix_rotate", "1>&2", NULL };*/
+/*                		        execv("/sbin/sh", args);*/
+/*                		        fprintf(stderr, "\nE: Unable to execute fix_rotate!\n(%s)\n", strerror(errno));*/
+/*                		        _exit(-1);*/
+/*                		    }*/
+/* */
+/*                		    int fixrotate_status;*/
+/*                		    while (waitpid(pidfr, &fixrotate_status, WNOHANG) == 0) {*/
+/*                		        ui_print("-");*/
+/*                		        sleep(1);*/
+/*                		    }*/
+/*                		    ui_print("\n");*/
+/* */
+/*                		    if (!WIFEXITED(fixrotate_status) || (WEXITSTATUS(fixrotate_status) != 0)) {*/
+/*                		        ui_print("\nE: run fix_rotate via console!\n\n");*/
+/*                		    } else {*/
+/*                		        ui_print("\n++ rotation fixed! ++\n\n");*/
+/*                		    }*/
+/*			} else {*/
+/*	       	                ui_print("\n-- rotation left alone --\n\n");*/
+/*       	            	}*/
+/*			if (!ui_text_visible()) return;*/
+/*			break;*/
 
                 case ITEM_FSCK:
                     ui_print("++ checking filesystems ++\n");
@@ -709,7 +716,6 @@ prompt_and_wait()
 
                     while (waitpid(pidf, &fsck_status, WNOHANG) == 0) {
                         ui_print("-");
-                        sleep(1);
                     }
                     ui_print("\n");
 
@@ -729,7 +735,7 @@ prompt_and_wait()
                     		ui_print("\n++ flashing system.img ++");
 		                    pid_t pidfl = fork();
                 		    if (pidfl == 0) {
-                		        char *args[] = { "/sbin/sh", "-c", "/sbin/flashsystem.sh 1.6", "1>&2", NULL };
+                		        char *args[] = { "/sbin/sh", "-c", "/sbin/flashsystem.sh", "1>&2", NULL };
                 		        execv("/sbin/sh", args);
                 		        fprintf(stderr, "\nE: Unable to execute flashsystem.sh!\n(%s)\n", strerror(errno));
                 		        _exit(-1);
@@ -743,7 +749,7 @@ prompt_and_wait()
                 		    ui_print("\n");
  
                 		    if (!WIFEXITED(flashhtc_status) || (WEXITSTATUS(flashhtc_status) != 0)) {
-                		        ui_print("\nE: /sdcard/htc/htc1.6.img exists?\n\n");
+                		        ui_print("\nE: /sdcard/system.img exist?\n\n");
                 		    } else {
                 		        ui_print("\n++ system flashed ++\n\n");
                 		    }
@@ -763,8 +769,8 @@ prompt_and_wait()
                     break;
                 case ITEM_BLANK_B:
                     break;
-                case ITEM_BLANK_C:
-                    break;
+/*                case ITEM_BLANK_C:*/
+/*                    break;*/
                 case ITEM_BLANK_D:
                     break;
                 case ITEM_BLANK_E:
@@ -833,6 +839,44 @@ prompt_and_wait()
 /*                        ui_print("\n");*/
 /*				ui_print("++ init.sh complete ++\n\n");*/
 /*                    break;*/
+		    case ITEM_BACKUP_GAPPS:
+                        ui_print("\n");
+                        pid_t pid_gapp0 = fork();
+                        if (pid_gapp0 == 0) {
+                            char *args[] = {"/sbin/sh", "-c", "/sbin/backuptool.sh backup", "1>&2", NULL};
+                            execv("/sbin/sh", args);
+                            fprintf(stderr, "E:Can't run backuptool.sh\n(%s)\n", strerror(errno));
+                            _exit(-1);
+                        }
+
+                        int status_pid_gapp0;
+
+                        while (waitpid(pid_gapp0, &status_pid_gapp0, WNOHANG) == 0) {
+                        		ui_print("-");
+						sleep(1);
+                        }
+                        ui_print("\n");
+				ui_print("++ gapps backed up ++\n\n");
+                    break;
+		    case ITEM_RESTORE_GAPPS:
+                        ui_print("\n");
+                        pid_t pid_gapp1 = fork();
+                        if (pid_gapp1 == 0) {
+                            char *args[] = {"/sbin/sh", "-c", "/sbin/backuptool.sh restore", "1>&2", NULL};
+                            execv("/sbin/sh", args);
+                            fprintf(stderr, "E:Can't run backuptool.sh\n(%s)\n", strerror(errno));
+                            _exit(-1);
+                        }
+
+                        int status_pid_gapp1;
+
+                        while (waitpid(pid_gapp1, &status_pid_gapp1, WNOHANG) == 0) {
+	                        ui_print("-");
+     	                   sleep(1);
+                        }
+                        ui_print("\n");
+				ui_print("++ gapps restored ++\n\n");
+                    break;
                 case ITEM_WIPE_EXT:
 				ui_print("\n");
                         pid_t pide = fork();
@@ -944,8 +988,8 @@ main(int argc, char **argv)
 
     ui_init();
     ui_print(prop_value);
-    ui_print("\n");
-    ui_print("+ Join us on IRC!\n\n");
+    ui_print("\n\n");
+    ui_print("+ Join us on IRC!\n");
     ui_print(prop_second);
     get_args(&argc, &argv);
 
